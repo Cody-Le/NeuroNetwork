@@ -22,7 +22,7 @@ class neuronet():
         layerSize = inputSize
         for layer in layers:
 
-            self.weights.append(np.random.rand(layerSize, layer) - 0.5)
+            self.weights.append(np.random.rand(layerSize, layer))
             layerSize = layer
 
     def feed_forward(self, x):
@@ -43,12 +43,18 @@ class neuronet():
         X[x < 0] = 0
         return X
 
+
     def predict(self, x):
         result = np.ones(len(x))
         for i,X in enumerate(x):
             result[i] *= self.feed_forward((X))
 
         return self.sigmoidLayer(result)
+
+
+    def training(self, x):
+        pass
+
 
 
     def cost_function(self, y_pred,y): #Binary Cross entropy
@@ -82,10 +88,15 @@ class neuronet():
 
     def backProp(self,x ,y_pred ,y):
         dCda = self.devCost(y_pred, y) * self.devSigmoid(self.activation(x[-1])) * self.devRelu(x[-1])
-        dC2 =  dCda * self.devZ(x[-2])
+        dC1 =  dCda * self.devZ(x[-2])
 
-        dC3 = dCda * self.devTheta(self.weights[-1]) * self.devRelu(x[-2])
-        print(np.dot(x[-3][:,np.newaxis], dC3[np.newaxis,:]))
+        dCd2a = dCda * self.devTheta(self.weights[-1]) * self.devRelu(x[-2])
+        dC2 = np.dot(x[-3][:,np.newaxis], dCd2a[np.newaxis,:])
+        dCd3a =  np.sum(dCd2a) * self.devRelu(x[-3])
+        dC3 = np.dot(x[-4][:,np.newaxis], dCd3a[np.newaxis,:])
+        return [dC3, dC2, dC1]
+
+
         pass
 
 
@@ -112,4 +123,5 @@ X_scaled_train = featureScale(X_train)
 y_pred, XatTimeStep = network.feed_forward(X_scaled_train[5])
 #print(network.cost_function(y_pred, y_train[0]))
 #print(XatTimeStep)
-network.backProp(XatTimeStep, y_pred, y_train[0])
+costDev = network.backProp(XatTimeStep, y_pred, y_train[0])
+print(costDev)
