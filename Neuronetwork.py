@@ -25,14 +25,12 @@ class neuronet():
             self.weights.append(np.random.rand(layerSize, layer) - 0.5)
             layerSize = layer
 
-        for weight in self.weights:
-            print(weight.shape)
     def feed_forward(self, x):
         X = x
         XatStep = []
-        print(self.n)
+        XatStep.append(X)
         for i in range(self.n):
-            print(i)
+            print(self.weights[i].shape)
             X = self.activation(np.dot(X, self.weights[i]))
             XatStep.append(X)
         #print(X)
@@ -41,7 +39,9 @@ class neuronet():
         return self.sigmoidLayer(X), XatStep
 
     def activation(self, x):
-        return x
+        X = x
+        X[x < 0] = 0
+        return X
 
     def predict(self, x):
         result = np.ones(len(x))
@@ -67,20 +67,25 @@ class neuronet():
         return y/y_pred - (1-y)/(1-y_pred)
 
     def devRelu(self, x):
-        if x > 0:
-            return 1
-        if x <= 0:
-            return 0
+
+        X = x
+        X[x > 0] = 1
+        X[x <= 0] = 0
+        return X
     def devZ(self, x):
+
         return x
     def devTheta(self, theta):
-        return theta
+        return np.transpose(theta)[0]
 
 
 
     def backProp(self,x ,y_pred ,y):
-        dC = self.devCost(y_pred, y) * self.devSigmoid(self.activation(x)) * self.devRelu(x) * self.devZ(x)
-        print(dC)
+        dCda = self.devCost(y_pred, y) * self.devSigmoid(self.activation(x[-1])) * self.devRelu(x[-1])
+        dC2 =  dCda * self.devZ(x[-2])
+
+        dC3 = dCda * self.devTheta(self.weights[-1]) * self.devRelu(x[-2])
+        print(np.dot(x[-3][:,np.newaxis], dC3[np.newaxis,:]))
         pass
 
 
@@ -104,7 +109,7 @@ df.head().to_csv("./pulsarStarHead.csv")
 network = neuronet(8, [4,3,1])
 
 X_scaled_train = featureScale(X_train)
-y_pred, XatTimeStep = network.feed_forward(X_scaled_train[0])
-print(network.cost_function(y_pred, y_train[0]))
-print(XatTimeStep)
-print(network.backProp(XatTimeStep[0][0], y_pred, y_train[0]))
+y_pred, XatTimeStep = network.feed_forward(X_scaled_train[5])
+#print(network.cost_function(y_pred, y_train[0]))
+#print(XatTimeStep)
+network.backProp(XatTimeStep, y_pred, y_train[0])
